@@ -1,10 +1,10 @@
 ## 공통
 
-* Connectionless, Stateless 를 지향하는 HTTP 의 단점을 보완하기 위해 사용
+* HTTP 는 Connectionless, Stateless 를 지향하다보니 생기는 단점을 보완하기 위해 사용.
 
 ## Cookie
 
-* 보통 session cokie 를 말합니다.
+* 보통 session cookie 를 말합니다.
 * key, value, expires, domain, path 로 구성되며, 서버가 생성하여 클라이언트 로컬에 저장됩니다.
 * 만료 시간에 따라 브라우저를 종료해도 남아있을 수 있습니다.
 * 보통 장바구니와 같은 개인화 정보에 사용됩니다.
@@ -62,14 +62,15 @@
 * signature
     - signature는 토큰을 인코딩하거나 유효성 검증을 할 때 사용하는 고유한 암호화 코드입니다.
     - header, payload 값을 각각 BASE64로 인코딩   
-      → secreat 키를 이용해 header에서 정의한 alg로 해싱   
+      → secret 키를 이용해 header에서 정의한 alg로 해싱   
       → BASE64로 인코딩하여 생성
 * 한번 발급된 토큰은 만료되기 전에는 서버에서 만료 시킬 수 없습니다.
-    - 유일한 방법은 secreat 키 변경 뿐 입니다.
+    - 유일한 방법은 secret 키 변경 뿐 입니다.
+        - 이를 방지하기 위해서 만료 시간을 작게 주고 refreshToken 을 사용합니다.
     - 서버에서 강제 만료를 시키기 위해 redis 로 관리하는 방법도 있습니다.  
       session 과의 차이점은 최소 정보만 관리한다는 것입니다.
 * 보안성 강화를 위한 방법
-    - secreat key 관리: key rotation, key rolling
+    - secret key 관리: key rotation, key rolling
     - 만료 시간이 짧은 accessToken과 만료 시간이 상대적으로 긴 refreshToken을 사용하는 전략
 
 ## 기타
