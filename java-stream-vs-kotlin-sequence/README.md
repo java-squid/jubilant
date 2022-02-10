@@ -384,22 +384,22 @@ fun <T> Sequence<T>.reversed() = object : Sequence<T> {
 * 코드에서 operation chain이 CPU-incentive process를 해야 하는 경우, 자바의 parallel stream을 고려해볼 수 있다.
     * Kotlin Corutines, Flow는 sequence를 parallel하게 처리하도록 만들어주는 커스텀 라이브러리다.
 
-### 더 공부할 거리
+### 더 공부할 거리 (다음 Chapter)
 * Java Stream과 Kotlin Sequence의 장,단점 비교 (null safety, performance 등)
 * 왜 Kotlin Sequence는 parallel이 안되는데 Java Stream은 될까요? (Keyword: Collection)
-* Kotlin Coroutine vs Kotlin Flow vs Kotlin Sequence 비교
-https://typealias.com/guides/kotlin-sequences-illustrated-guide/
-https://proandroiddev.com/java-streams-vs-kotlin-sequences-c9ae080abfdc
-https://typealias.com/guides/when-to-use-sequences/
-https://bcp0109.tistory.com/359
-https://blog.frankel.ch/kotlin-collections-sequences/
-https://velog.io/@dhwlddjgmanf/Kotlin-asSequence-vs-non-asSequence
-https://www.codementor.io/@kotlin_academy/effective-kotlin-use-sequence-for-bigger-collections-with-more-than-one-processing-step-jqgbmnllp
-https://umbum.dev/599
-https://jo5ham.tistory.com/14
-https://codechacha.com/ko/kotlin-sequences/
-https://discuss.kotlinlang.org/t/kotlin-sequences-vs-java-streams/14415
-https://minz.dev/25
+* Kotlin Coroutine vs Kotlin Flow vs Kotlin Sequence 비교해보기
 
-Kotlin Flow: Parallel
+### Reference
+* https://typealias.com/guides/kotlin-sequences-illustrated-guide/
+* https://proandroiddev.com/java-streams-vs-kotlin-sequences-c9ae080abfdc
+* https://typealias.com/guides/when-to-use-sequences/
+* https://bcp0109.tistory.com/359
+* https://blog.frankel.ch/kotlin-collections-sequences/
+* https://velog.io/@dhwlddjgmanf/Kotlin-asSequence-vs-non-asSequence
+* https://www.codementor.io/@kotlin_academy/effective-kotlin-use-sequence-for-bigger-collections-with-more-than-one-processing-step-jqgbmnllp
+* https://umbum.dev/599
+* https://jo5ham.tistory.com/14
+* https://codechacha.com/ko/kotlin-sequences/
+* https://discuss.kotlinlang.org/t/kotlin-sequences-vs-java-streams/14415
+* https://minz.dev/25
 * https://medium.com/mobile-app-development-publication/kotlin-flow-a-much-better-version-of-sequence-d2555ba9eb94
