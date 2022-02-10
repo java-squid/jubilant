@@ -77,6 +77,7 @@ val fireSet = BigBoxOfCrayons
     .take(5)
     .toSet() // executing!
 ```
+* Eager -> lazy 변경을 쉽게 하기 위해 기존 Collection에 대한 chain calls 앞에 asSequence() 만 붙여주면 만사 OK다.
 
 ![Image5](https://typealias.com/img/guides/sequences-illustrated-guide/full-process-efficient-code-40p.png)
 
@@ -258,6 +259,95 @@ val fireSet = BigBoxOfCrayons
         * .filterIsInstance()	FilteringSequence()
         * .filterIndexed()	TransformingSequence(FilteringSequence(IndexingSequence()))
 
+### Kotlin Sequence API vs Kotlin Collection API 비교
+```
+// _Collections.map
+public inline fun <T, R> Iterable<T>.map(transform: (T) -> R): List<R> {
+    return mapTo(ArrayList<R>(collectionSizeOrDefault(10)), transform)
+}
+
+// _Collections.mapTo
+public inline fun <T, R, C : MutableCollection<in R>> Iterable<T>.mapTo(destination: C, transform: (T) -> R): C {
+    for (item in this)
+        destination.add(transform(item))
+    return destination
+}
+
+// _Sequences.map
+public fun <T, R> Sequence<T>.map(transform: (T) -> R): Sequence<R> {
+    return TransformingSequence(this, transform)
+}
+
+// Sequences.TransformingSequence
+internal class TransformingSequence<T, R>
+constructor(private val sequence: Sequence<T>, private val transformer: (T) -> R) : Sequence<R> {
+    override fun iterator(): Iterator<R> = object : Iterator<R> {
+        val iterator = sequence.iterator()
+        override fun next(): R {
+            return transformer(iterator.next())
+        }
+
+        override fun hasNext(): Boolean {
+            return iterator.hasNext()
+        }
+    }
+
+    internal fun <E> flatten(iterator: (R) -> Iterator<E>): Sequence<E> {
+        return FlatteningSequence<T, R, E>(sequence, transformer, iterator)
+    }
+}
+```
+* 위 코드를 보면 알 수 있지만, Stream API는 inline function이고 람다를 바로 실행한다. 이와 달리, Sequence API는 일반 함수이고 람다를 저장한다는 특징이 있다.
+* [inline function](https://agrawalsuneet.github.io/blogs/inline-function-kotlin/)은 매개 변수로 SAM interface를 받는 함수를 익명 함수롤 통하여 호출하게 되면, 해당 함수 호출마다 새로운 객체를 생성하게 되므로 오버헤드가 발생하게 된다. [참고](https://medium.com/@mook2_y2/%EC%BD%94%ED%8B%80%EB%A6%B0-%EC%9E%85%EB%AC%B8-%EC%8A%A4%ED%84%B0%EB%94%94-14-inline-functions-f3628bb347ca)
+   * 하지만 캡쳐링하지 않은 람다, 즉 람다 외부의 지역 변수를 참조하지 않은 람다는 람다 자체가 stateless 하므로 람다를 따로 저장해두었다가 계속 사용하는 방식으로 바이트코드를 컴파일 할 수 있게 된다.
+   * 이와 달리 캡쳐링한 람다, 즉 람다 외부의 지역 변수를 참조하는 람다는 람다 자체가 stateful 하므로 람다가 가지고 있는 변수가 각기 다르므로 람다를 미리 저장해두었다가 재사용하는 방식으로 사용할 수 없으므로 계속 함수 호출마다 새롭게 객체를 생성해야만 할 것이다.
+   * inline function은 바이트코드로 컴파일할 때 람다 함수의 본문을 함수를 호출한 곳으로 복사하여 바이트코드를 생성하도록 강제하는 옵션이다.
+   * 만약 함수의 본문이 그리 크지 않다면 바이트코드가 많아져서 무거워질 일도 없으니 캡처링하지 않은 람다를 받는 함수를 인라인 함수로 만들면 속도의 향상이 있을 수 있겠다.
+* Collection의 Stream API는 캡쳐링하지 않은 람다를 받으므로 인라인 함수로 구현할 수 있고, Sequence의 Stream API는 람다를 실행하지 않고 새로운 클래스에 저장하게 되므로 람다가 stateful 하게 되어 인라인 함수로 구현할 수 없다. Sequence 의 경우는 map 이 inline 이 아닌데, 해당 lambda 를 저장하고 있다가 final operation 이 수행되었을 때 이 lambda 를 사용해야 하기 때문이다.
+* 따라서 Collection을 사용하게 되면 람다를 실행할 때마다 새로운 스트림을 생성해야 하고, Sequence를 사용하게 되면 람다를 실행할 때마다 새로운 익명 객체를 생성해야 한다.
+* 원소의 수가 적을 때는 람다 객체를 만드는 것이 오버헤드가 더 크고, 원소의 수가 많을 때는 스트림을 매번 생성하는 것이 오버헤드가 더 크다. 결론적으로, Collection의 크기가 클 때 asSequence()를 사용하여 시퀀스를 사용해야 한다.
+
+* 하기 익명 객체 생성의 예시는 다음 [StackOverFlow](https://stackoverflow.com/questions/48140788/kotlin-higher-order-functions-costs) 예시를 참조한다.
+```java
+// 익명 객체 생성 예시
+// Definition of higher-order function and caller code:
+
+fun hoFun(func: (Int) -> Boolean) {
+    func(1337)
+}
+
+//invoke with lambda
+val mod = 2
+hoFun { it % mod == 0 }
+
+// Bytecode Java Representation:
+
+public static final void hoFun(@NotNull Function1 func) {
+  Intrinsics.checkParameterIsNotNull(func, "func");
+  func.invoke(1337);
+}
+
+final int mod = 2;
+hoFun((Function1)(new Function1() {
+
+     public Object invoke(Object var1) {
+        return this.invoke(((Number)var1).intValue());
+     }
+
+     public final boolean invoke(int it) {
+        return it % mod == 0;
+     }
+}));
+```
+* Lambda는 Bytecode에서 Function 형태로 컴파일 된다. inline을 활용하면 훨씬 간단해진다.
+```java
+int mod = 2;
+int it = 1337;
+if (it % mod == 0) {
+   ;
+}
+```
+
 ### 그러면 언제 Sequence를 사용해야 하는가?
 #### Performance-based
 * Operation Count
@@ -285,13 +375,19 @@ val fireSet = BigBoxOfCrayons
     * ArrayList는 JVM에서 regular Java array로 동작하는데, 이 array는 fixed size로 동작한다.
     * 즉, 다시 말해서 array 생성 시점에서 크기를 선택하는데, array의 크기를 절대 늘릴 수 없다.
     * ArrayList는 initial capacity가 있고, initial capacity가 늘어나는 만큼의 새로운 원소가 추가될 경우 underlying array를 새로 만들고, 기존 array에서 기존 원소를 복사하고 뒤에 새로운 원소를 붙인다. 새롭게 만들어지는 array의 initial capacity는 현재 담고자 하는 원소의 150% 만큼 할당한다.
+
+
     ![Image8](https://typealias.com/img/guides/when-to-use-sequences/arraylist-empty.png)
+    
     * add 함수를 실행했다!
     ![Image9](https://typealias.com/img/guides/when-to-use-sequences/arraylist-full.png)
+    
     * 크기를 150% 늘린 새로운 array를 생성하고, 기존 원소를 복사해서 새롭게 붙인다.
     ![Image10](https://typealias.com/img/guides/when-to-use-sequences/arraylist-copy.png)
+    
     * 이제 뒤에 새로운 원소를 추가해본다.
     ![Image11](https://typealias.com/img/guides/when-to-use-sequences/arraylist-vacancy.png)
+    
     * 기존 array 크기를 10개라고 가정해보자. 그러면 11번째 원소를 넣으려고 하면, 크기가 15개인 새로운 array를 만든다. 이 과정은 array 생성 시간과 공간 차지를 비효율적으로 만든다.
 
 * map 함수의 실행
@@ -344,7 +440,7 @@ public fun <T : Comparable<T>> Sequence<T>.sorted(): Sequence<T> {
 * collection에는 isEmpty나 contains, size 같은 함수나 프로퍼티가 존재하지만, sequence는 iterator로 구성되어 있어 이러한 properties나 function이 존재하지 않는다. 따라서 생산성 측면에서 collection의 손을 들어줄 수 있겠다.
 ![Image14](https://typealias.com/img/guides/when-to-use-sequences/sequence-collection-uml.png)
 
-* 사실 sequence를 사용하면 infinite sequence를 만들 수 있다. 다음의 코드를 보자.
+* 사실 sequence를 사용하면 infinite sequence를 만들 수 있다. [Sequence는 terminal operation을 진행하기 전까지 연산이 일어나지 않기 때문에 무한히 원소를 생성하는 방식으로 sequence를 만들어도 최종 결과물이 유한한 형태로 제한된다면 overflow 문제는 없다.](https://medium.com/@mook2_y2/%EC%BD%94%ED%8B%80%EB%A6%B0-%EC%9E%85%EB%AC%B8-%EC%8A%A4%ED%84%B0%EB%94%94-15-sequences-52cfca1805c8) 다음의 코드를 보자.
 ```kotlin=
 val sequence = generateSequence { Random.nextInt() }
 ```
