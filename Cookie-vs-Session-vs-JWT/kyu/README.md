@@ -36,9 +36,9 @@ JWT 를 이야기하기전에  쿠키와 세션에 대해 먼저 알아보자.
 
 JWT(JSON Web Token)는 그런 클레임 토큰들 중에서 JSON 형식의 클레임 토큰을 말하고, RESTful APIs나 OAuth에서 거의 표준처럼 많이 사용되고 있다.
 
-세션이나 JWT나 결국엔 요청때마다 유효한 암호화된 정보를 서버에 보낸다. 세션 같은 경우에는 쿠키에 sessionId를 담아서 요청하고 JWT는 헤더에 담아 보내는 차이가 있는 것이다.
+세션이나 JWT나 결국엔 요청때마다 유효한 인코딩된 정보를 서버에 보낸다. 세션 같은 경우에는 쿠키에 sessionId를 담아서 요청하고 JWT는 HTTP Authorization 리퀘스트 헤더에 담아 보내는 차이가 있는 것이다.
 
-중요한 건 세션 같은 경우엔 서버에서 sessionId를 가지고 세션 디비에서 사용자 정보를 찾는다. 때문에 수 많은 사용들이 한번에 어플리케이션에 요청을 하면 서버 메모리에 무리가 갈 것이다. 하지만 JWT는 디비를 뒤적이는 게 아니라 secret key를 이용해 복호화하는 알고리즘 방식이다. 그렇기 때문에 세션 기반은 아무래도 디비를 한번 거치기 때문에 비교적 JWT가 복호화하는 것보다 느리다.
+중요한 건 세션 같은 경우엔 서버에서 sessionId를 가지고 세션 디비에서 사용자 정보를 찾는다. 때문에 수 많은 사용들이 한번에 어플리케이션에 요청을 하면 서버 메모리에 무리가 갈 것이다. 하지만 JWT는 디비를 뒤적이는 게 아니라 secret key를 이용해 복호화하는 알고리즘 방식이다. 그렇기 때문에 세션 기반은 아무래도 디비를 한번 거치기 때문에 비교적 JWT가 복호화하는 것보다 느리다. 
 
 앞서 이야기 했던 토큰이 세션의 단점을 완화시킬 수 있다는 것은 토큰이 확장성을 크기 때문이다. JWT는 사용자 정보를 얻기위해 디비를 거치지 않아도 되고, JWT가 ACCESS_TOKEN_SECRET를 통해서 복호화되면서 바로 사용자 정보를 얻게 된다. 이때 JWT는 ACCESS_TOKEN_SECRET만 여러 서버와 나누면서 스케일업이 가능해진다. 이것을 두고 확장성이 크다고 하는데, 세션 기반이라면 디비에 있는 sessionId를 모두 카피해야하거나 모든 서버가 공통의 세션디비를 공유해야기 때문에 확장성이 낮다고 한다.
 
@@ -48,7 +48,7 @@ JWT(JSON Web Token)는 그런 클레임 토큰들 중에서 JSON 형식의 클�
 
 JWT가 나오기전에는 주로 이 인증 방식을 사용했다. 세션 기반은 서버에서 인증 과정이 모두 이루어지기 때문에 클라이언트는 요청을 보낸 뒤 서버 사이드에서 어떤 일이 일어나는지 알수 없다.
 
-로그인을 예로 들어보자. 유저가 로그인을 하면 서버는 그 유저에 대해 secret key를 가지고 sessionId를 만들어 세션DB 안에 저장한다. 그리고 그 sessionId를 헤더 `Set-Cookie`에 담아 클라이언트로 보낸다.
+로그인을 예로 들어보자. 유저가 로그인을 하면 서버는 그 유저에 대해 sessionId를 만들어 세션DB 안에 저장한다. 그리고 그 sessionId를 헤더 `Set-Cookie`에 담아 클라이언트로 보낸다.
 
 유저가 브라우저에서 이런저런 활동을 하는동안에도 브라우저 내 쿠키에는 이 세션아이디가 cookie storage 라는 곳에 저장되어 있다. 그리고 요청할때마다 세션아이디가 담긴 쿠키를 같이 보낸다. 유저가 로그인 할 때는 서버는 세션DB에 저장되어있는 sessionId를 가지고 쿠키에 있는것과 비교하여 인증할 수 있다. 끝으로 유저가 로그아웃하면 세션 데이터가 서버에서 삭제되어진다.
 
@@ -56,7 +56,7 @@ JWT가 나오기전에는 주로 이 인증 방식을 사용했다. 세션 기�
 
 JWT 토큰 기반인증은 앞서 말했듯, OAuth나 RESTful API에서 주로 사용되어지는 인증 방법이다.
 
-로그인 인증 후에 서버는 ACCESS_TOKEN_SECRET을가지고 userId와 expiresIn을 암호화하여 accessToken을 생성한다. 그리고 accessToken을 클라이언트로 보내고, JWT는 브라우저(클라이언트)의 localStorage에 저장된다. 서버가 요청을 수신하면 모든 요청에 대해 JWT가 해당 특정 사용자에게만 해당하는지 확인한 다음 필요한 응답을 클라이언트에 다시 보낸다.
+로그인 인증 후에 서버는 ACCESS_TOKEN_SECRET을가지고 userId와 expiresIn을 암호화하여 accessToken을 생성한다. 그리고 accessToken을 클라이언트로 보내고, JWT는 브라우저(클라이언트)의 localStorage나 cookie에 저장될 수 있다. 서버가 요청을 수신하면 모든 요청에 대해 JWT가 해당 특정 사용자에게만 해당하는지 확인한 다음 필요한 응답을 클라이언트에 다시 보낸다.
 
 중요한 점은 accessToken은 세션DB에 저장되어지지 않는다.
 
@@ -83,3 +83,4 @@ xxxxx.yyyyy.zzzzz
 5. https://guides.dataverse.org/en/latest/api/auth.html
 6. https://elfinlas.github.io/2018/08/12/whatisjwt-01/
 7. https://stackoverflow.com/questions/37582444/jwt-vs-cookies-for-token-based-authentication
+8. https://velog.io/@0307kwon/JWT%EB%8A%94-%EC%96%B4%EB%94%94%EC%97%90-%EC%A0%80%EC%9E%A5%ED%95%B4%EC%95%BC%ED%95%A0%EA%B9%8C-localStorage-vs-cookie
