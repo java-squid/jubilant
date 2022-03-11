@@ -7,11 +7,14 @@
 # About
 - 두가지 모두 Lock을 어떻게 다룰 것인가에 대한 모델
   - 데이터베이스 기본 기능은 아닌듯.
+  - 락을 바라보는 관점
 - 낙관적인 락
   - 변경 사항이 데이터베이스에 커밋될 때만 레코드가 잠길 것임. 
+    - 락에 대해 조금 느슨하게 바라보는 듯, 트랜잭션 간이 충돌이 발생하지 않을 것. 즉 락 설정에 문제가 없을 거다!
   - 즉 변경사항이 있어도, 아직 커밋이 안되었으면 잠겨있지 않을듯.
 - 비관적인 락
   - 레코드가 변경이 되고 있다면, 잠겨있을 거임. 즉 Lock이 걸려 있을 것.
+  - 트랜잭션 간 충돌이 일어날 것이라 생각하고 (비관적), 락을 좀 미리 빡세게 걸어놓는 느낌.
   - `낙관적인 락` 보다는 좀 더 엄격한 느낌. 만약에 어떤 레코드가 수정 중이라면 (아직 커밋이 안된 상태) 락이 걸려있을 거라 기대하는 모델인듯.
 
 
@@ -41,15 +44,14 @@
   - 일정 시간이 지나면 Dead Lock 같은게 발생하지 않을까?
 
 # In JPA
-
-
-# Sample
-
-> 코드를 통해, 지금까지 정리한 내용 되짚어보기.
+- 이 부분은 아래 블로그 포스팅을 참고하면 좋을듯.
+  - https://junhyunny.github.io/spring-boot/jpa/junit/jpa-optimistic-lock/
+  - https://junhyunny.github.io/spring-boot/jpa/junit/jpa-pessimitic-lock/
 
 
 # 추가적인 키워드
 - Shared Lock, Exclusive Lock 
+- Isolation Level
 - MVCC
 - Dead Lock
 
@@ -57,5 +59,6 @@
 - https://www.ibm.com/docs/en/rational-clearquest/7.1.0?topic=clearquest-optimistic-pessimistic-record-locking
 - https://vladmihalcea.com/optimistic-vs-pessimistic-locking/
 - https://www.baeldung.com/jpa-optimistic-locking
+- https://www.baeldung.com/jpa-pessimistic-locking
 - https://okky.kr/article/1023929
 - https://velog.io/@wmpark90/JPA-%EB%82%99%EA%B4%80%EC%A0%81-%EB%9D%BD%EA%B3%BC-%EB%B9%84%EA%B4%80%EC%A0%81-%EB%9D%BD
