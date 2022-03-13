@@ -115,26 +115,26 @@ class UserRepository {
 }
 ```
 
-getValue 의 경우 key 에 해당하는 value 가 map에 없으면, <br>
+getValue 의 경우 key 에 해당하는 value 가 map에 없으면,  
 NoSuchElementException 을 발생하는 코틀린 함수이다.
 
-데이터를 In Memory 형태로 스스로 가진 UserRepository 를 구현해보았다. <br>
-유저 데이터를 private 을 통해 캡슐화하였고, <br>
+데이터를 In Memory 형태로 스스로 가진 UserRepository 를 구현해보았다.  
+유저 데이터를 private 을 통해 캡슐화하였고,  
 조작 가능한 매커니즘을 함수를 통해 제공하므로 저장소(Repository)라고 부를 수 있다.
 
 하지만 개발을 하다보면 데이터의 Source 가 동일하지 않는 경우가 자주 생긴다.
 
-가령 프로세스의 메모리 위에 올라간 Data 와, <br>
-로컬 머신의 Storage 에 저장되는 Data 와, <br>
+가령 프로세스의 메모리 위에 올라간 Data 와,  
+로컬 머신의 Storage 에 저장되는 Data 와,  
 리모트 DB 서버에서 관리되는 Data 와 같이 3가지 다른 Source 를 가질 수 있다.
 
-각각은 따로따로 관리되어야 하며 동기화를 해주어야할 필요성 뿐만 아니라, <br>
+각각은 따로따로 관리되어야 하며 동기화를 해주어야할 필요성 뿐만 아니라,  
 각각의 Data Source 에 접근(Access) 하기 위한 매커니즘도 모두 다르다.
 
-이러한 차이에 대응하기 위하여, interface 를 통한 추상화가 필요하다. <br>
+이러한 차이에 대응하기 위하여, interface 를 통한 추상화가 필요하다.  
 이를 **Repository Interface** 디자인 패턴이라고 한다.
 
-개발을 하다보면 Repository Interface 를 축약해서 Repository 라고 하는 경우가 많이 보이는데, <br>
+개발을 하다보면 Repository Interface 를 축약해서 Repository 라고 하는 경우가 많이 보이는데,  
 (마치 DBMS 를 그냥 DB 라고 부르는 것과 비슷하다.)
 
 "Repository" 와 "Repository Interface 패턴" 은 다르다는 인식이 필요하다.
@@ -170,7 +170,7 @@ class InMemoryUserRepository : UserRepository {
 }
 ```
 
-UserRepository 인터페이스를 먼저 정의한 후에, <br>
+UserRepository 인터페이스를 먼저 정의한 후에,  
 InMemoryUserRepository 라는 실제 구현체를 만들었다.
 
 그리고 JPA 를 활용하면 위의 코드를 거의 자동으로 생성을 해준다.
@@ -179,17 +179,17 @@ InMemoryUserRepository 라는 실제 구현체를 만들었다.
 public interface RemoteUserRepository extends UserRepository, JpaRepository<User, Long> {}
 ```
 
-한 줄만 작성하면 RemoteUserRepository 인스턴스를 의존성 주입을 받았을 때, <br>
+한 줄만 작성하면 RemoteUserRepository 인스턴스를 의존성 주입을 받았을 때,  
 JPA 가 자동으로 구현해주는 save, count, findAll, findById 를 마음껏 사용할 수 있다.
 
-하지만 한가지 위화감이 든다. <br>
-RemoteUserRepository 는 `org.springframework.data.jpa.repository.JpaRepository` 에 의존적이기 때문이다. <br>
+하지만 한가지 위화감이 든다.  
+RemoteUserRepository 는 `org.springframework.data.jpa.repository.JpaRepository` 에 의존적이기 때문이다.  
 즉 RemoteUserRepository 를 캡슐화하고, 메카니즘을 구현하는 주체는 개발자가 아닌 프레임워크이다.
 
-그에 따라 프레임워크에 의존적인 인터페이스를 "DataSource" 라는 다른 명칭을 쓰기로 하였다. <br>
+그에 따라 프레임워크에 의존적인 인터페이스를 "DataSource" 라는 다른 명칭을 쓰기로 하였다.  
 그렇게 RemoteDataSource 와 LocalDataSource 를 표현해 보자면 다음과 같다.
 
-DataSource 의 인터페이스와 Repository 의 인터페이스는 충분히 다를 수 있다고 생각했기 때문에, <br>
+DataSource 의 인터페이스와 Repository 의 인터페이스는 충분히 다를 수 있다고 생각했기 때문에,  
 DataSource 인터페이스는 Repository 인터페이스를 extends 하지 않는다.
 
 ```java
@@ -213,16 +213,16 @@ interface LocalUserDataSource {
 }
 ```
 
-보다시피, 안드로이드 Room 의 Dao 를 활용해서 SQLite DB 에 접근할 때, <br>
+보다시피, 안드로이드 Room 의 Dao 를 활용해서 SQLite DB 에 접근할 때,  
 vararg 와 관련된 기능을 제공하므로, saveAll 만 있고 save 가 없다.
 
-즉 프레임워크에 의존적인 인터페이스는, <br>
+즉 프레임워크에 의존적인 인터페이스는,  
 개발자가 인터페이스를 직접 정의하는게 아니라 프레임워크의 가이드라인을 따르게 되는 경우가 많다.
 
 ### 비즈니스가 정말로 요구한 메커니즘
 
-프레임워크에 의존적인 DataSource 인터페이스와, <br>
-비즈니스가 요구하는 Repository 인터페이스를 구분하기 시작하면 <br>
+프레임워크에 의존적인 DataSource 인터페이스와,  
+비즈니스가 요구하는 Repository 인터페이스를 구분하기 시작하면  
 핵심 비즈니스 로직을 바닐라 언어로 구현하는 자유를 얻을 수 있다.
 
 가령 다음과 같은 2개의 비즈니스 로직이 요구되었다고 생각해보자.
@@ -255,10 +255,10 @@ class UserRepositoryImpl(
 
 ## 결론
 
-데이터베이스의 **엔티티** 는 relation(테이블)을 인스턴스화한 자료 구조이다. <br>
+데이터베이스의 **엔티티** 는 relation(테이블)을 인스턴스화한 자료 구조이다.  
 비즈니스 로직을 가진 **도메인 모델** 과는 구분되어야 한다.
 
-엔티티는 필연적으로 프레임워크에 의존적일 수 밖에 없지만, <br>
+엔티티는 필연적으로 프레임워크에 의존적일 수 밖에 없지만,  
 도메인 모델은 바닐라 언어로 구현되어야 한다.
 
 ## Reference
