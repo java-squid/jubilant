@@ -79,3 +79,4 @@
 - https://woowabros.github.io/
 - https://blog.banksalad.com/
 - https://github.com/seonggwonyoon/techblog
+- https://github.com/sirloin-dev/meatplatform/blob/master/job-description/interview-questions.adoc?fbclid=IwAR2QJeR6-rW8u5-29SK-HFShsffR-WfcfItx59pyG4XseSL-0fBPDTErBA4#interview-questions-network
