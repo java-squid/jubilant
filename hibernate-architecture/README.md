@@ -103,3 +103,15 @@
 
 ### Reference
 - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/support/TransactionSynchronizationManager.html
+
+
+
+# 정리
+- Hibernate arichitecture 는 생각보다 나뉘어져 있음.
+    - 그리고 각 분야별로 역할이 잘 정해져있는 것 같다 (트랜잭션 관리, 세션 관리등등)
+- 메서드나 클래스에 `@Transaction` 이 붙으면 아마도 HibernateTransactionManager 에서 캐치해서 관련 작업을 진행하는 것 같음.
+- Spring에서 session 관리는 SpringSessionContext 에서 된는듯.
+    - 이 클래스는 스레드별로 관리되는 듯함
+- `TransactionSynchronizationManager` 이 클래스는 스레드별로 Transaction 을 관리해주는 클래스인듯 싶음.
+    - 살아있는 트랜잭션인지, 혹은 세션 동기화가 필요한 지등의 기능을 가지고 있는듯함.
+- `@Transaction` 이라는 어노테이션을 붙였을 때, 내부에서 발생하는 로직은 생각보다 복잡함.
