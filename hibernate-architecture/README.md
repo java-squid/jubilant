@@ -1,8 +1,16 @@
 # Hibernate Architecture
-- 들어가면서..
-- Spring 5, Hibernate 5, HikariCP 사용 중.
-- 현재 프로젝트 환경의 아키텍쳐가 다음과 같다고 생각하자, 만약에 A- TransactinoManager가 진행 중인 트랜잭션 중에 B- SessionFactory로 switch 한다면, 어떻게 될까?
+> 들어가면서..
+- 현재 Spring 5, Hibernate 5, HikariCP 사용 중.
+- 목표는? database-routing (main <-> repl)
+    - 검색해보면?
+    - https://www.baeldung.com/spring-abstract-routing-data-source 와 같은 방법을 찾아볼 수도 있음.
+- 그렇지만 현재 환경에서 안될 수도?
+    - 왜? 
+    - Dao Layer 에서 SessionFactory를 직접 주입 받아서 하고 있기 때문에
+    - 위 포스팅은 `Datasource` 레벨에서의 스위칭 인듯
+- 그러면.. 만약에 A- TransactinoManager가 진행 중인 트랜잭션 중에 B- SessionFactory로 switch 한다면, 어떻게 될까?
     - 에러? 성공?..
+
 
 ## Architecture 
 ![](https://access.redhat.com/webassets/avalon/d/Red_Hat_JBoss_Web_Server-3-Hibernate_Core_Reference_Guide-en-US/images/c3ee197b49364a876bc5867d5c2c6db7/1091.png)
@@ -34,14 +42,18 @@
 
 
 ## HibernateTransactionManager
-
 - 하나의 하이버네티트 세션 팩토리를 위한 PlatformTransactionManager 구현체
+- `AbstractPlatformTransactionManager` 추상 클래스도 상속했음.
+
 - 특정 factory에서 thread에  하이버네이트 세션을 바인딩 하는건, 잠재적으로 하나의 세션에 하나의 스레드라는 걸 허용하는거나 다름없는듯.
-- SessionFactory.getCurrentSession() 는 요구됨. 트랜잭션 작업을 도와주는 하이버네이트 접근 코드에, 그리고 SpingSEssionContext에 SesstionFactory가 정의되어야 있어아하고, 
-- 커스텀 isolation level을 지원하고, timoeout option도 적용하는듯.
-- 이 트랜잭션 매니저는 (HibernateTransactionManage) 는 트랜잭션 데이터 접근에, 하나의 하이버네이트 세션 팩토리를 이용하는 어플리케이션에 적합함.
-- 그러나 Datasource에 직접적인 접근도 지원함. 
+- `SessionFactory.getCurrentSession()` 는 요구됨. 트랜잭션 작업을 도와주는 하이버네이트 접근 코드에, 그리고 SpingSessionContext에 SesstionFactory가 정의되어야 있어아하고, 
+- 커스텀 isolation level을 지원하고, timoeout option도 설정할 수 있도록 해주는 듯.
+- 이 트랜잭션 매니저는 (HibernateTransactionManage) 는 트랜잭션 데이터 접근에, 하나의 하이버네이트 세션 팩토리를 이용하는 어플리케이션에 적합함. 
+
+> 정리하자면,
 - 즉 SessionFactory를 가지고 Session을 핸들링하면서, 원자적인 작업 단위인 Transaction을 관리하기 위한 클래스.
+- 가능한 하나의 세션을 하나의 스레드에서 사용하게 하려 하는듯 (느낌상)
+
 
 ### LifeCycle
 
@@ -88,3 +100,6 @@
 
 - 현재 진행되는 트랜잭션을 관리하는 매니저 인듯
 - 스레드 별로 있는 듯.
+
+### Reference
+- https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/support/TransactionSynchronizationManager.html
