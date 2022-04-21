@@ -13,7 +13,7 @@
 ## JPQL
 - JPA 엔티티에 대한 쿼리작성 문법 - SQL이랑 비슷
 - 예를 들어 select * from member 이런거도 select * from Member 같이 from 절에 객체가 들어간다
-- 엄청 신기하다 [select new memberDTO 이런것도 있다](https://doing7.tistory.com/133#:~:text=%EC%A0%84%EC%B2%B4%20%ED%81%B4%EB%9E%98%EC%8A%A4%EB%AA%85%20%EC%9E%85%EB%A0%A5-,select%20new%20%ED%8C%A8%ED%82%A4%EC%A7%80%EB%AA%85.memberDTO(m.username%2C%20m.age)%20from%20Member%20as%20m,-%F0%9F%8C%B1%C2%A0%EC%97%94%ED%8B%B0%ED%8B%B0%20%ED%95%84%EB%93%9C%EC%9D%98%20%EB%91%90%EA%B0%80%EC%A7%80)
+- 엄청 신기하다 [select new memberDTO 이런것도 있다]
 
 ## JPA 영속성 컨텍스트란?
 - 디비와 어플리케이션 사이에 객체를 관리하는 논리적 공간 (컨텍스트)
@@ -24,6 +24,18 @@
       - 1차캐시는 스레드하나에서만 쓴다. 해당 스레드가 종료되면 1차캐시도 사라진다. 스레드 100개면 1차캐시도 100개생김. 트랜잭션 범위에서만 사용가능한것
       - 트랜잭션을 어플리케이션에서 차원에서 제공을 하는 것?
       - 2차캐시는 글로벌하게 사용가능
+
+#### 1차 캐시와 2차 캐시의 구현 방법을 다르게 처리한 이유
+- 1차 캐시 트랜잭션의 시작과 종료의 term일때만 유효
+- 2차 캐시는 글로벌
+
+스레드마다 영속성 컨텍스트 새로 생성된다, 즉 1차 캐시가 새로 생성된다.   
+때문에, 서로 다른 영속성 컨텍스트에서 똑같은 member를 select할 때,   
+항상 네트워크를 통해 디비를 조회하는 것은 비효율적.   
+이를 해결하려면 글로벌적인 캐시가 있으면 해결됨.
+그것이 2차 캐시!
+
+참고: https://willseungh0.tistory.com/77
 ### 이유2: 동일성보장
   - 한번 select한 객체가 캐싱되어있기 때문에 똑같은 객체라 해당 객체에 대한 동일성 보장이 가능. 만약에 똑같은 row라도 따로 select 두번했으면 다른 객체가 만들어질꺼니까
 ### 이유3: 트랜잭션 지원 쓰기지연
@@ -73,10 +85,30 @@
 - 왜그러냐 하면 post_comment 리스트가 호출되기전에 post의 association가 먼저 호출되어져야하기 때문이라고 한다.
     - 이거 이해못함
     - 원문: [Notice the additional SELECT statements that are executed **because the post association has to be fetched prior to returning the List of PostComment entities.**](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping/39696775#:~:text=WHERE%20p.id%20%3D%204-,Notice%20the%20additional%20SELECT%20statements%20that%20are%20executed%20because%20the%20post%20association%20has%20to%20be%20fetched%20prior%20to%20returning%20the%20List%20of%20PostComment%20entities.,-Unlike%20the%20default)
+    - onetoone에서 발생하는 이유 by jypthemiracle: https://github.com/java-squid/2022-jubilant/pull/20/files#r846593587
 - post association이 필요없다면 lazy로 변경해줘야한다 
-- post association이 필요하다면 join fetch를 사용해야한다
+- post association이 필여하다면 join fetch를 사용해야한다
 - 근데 lazy로 명시해줘도 n +1 문제가 발생한다
     - 문제 원인과 해결법 제대로 파악못함
+    
+벌크연산 주의점
+- 영속성 컨텍스트를 거치지않고 디비에 직접 쿼리하기때문에 데이터 무결성이 깨짐
+- 예를들어 길동이 member 하나 select 했다
+  - 영속성 컨텍스트에 길동이 member 존재, 길동이 age=45
+  - jpql 벌크연산으로 set member.age = 1
+  - 길동이 age는 그대로임
+  - why?
+  - 벌크연산 업데이트시 해당 member가 이미 영속성 컨텍스트에 있으면 디비에서 조회한 신규 데이터를 버리기 때문
+
+해결책
+- 1. select하기전에 벌크연산 먼저 수행한다
+  - 영속성 컨텍스트에 기존데이터 없으니까 벌크연산 수행후에 영속성컨텍스트에 member list가 있을거니까
+- 2. 벌크 연산 수행후 영속성 컨텍스트 초기화
+  - 이후에 select 하게되면 비어있으므로 1차캐시가 없으니까 디비를 조회하게 됨
+- 3. em.refresh(길동이) 길동이만 리프레쉬
+- 4. 제일 좋은 것은 벌크연산과 그 외의 것을 분리하는 것입니다. CQRS를 생각해보면 그렇습니다. 만약 섞이는 경우가 있다면 명시적인 flush()가 필요합니다. 출처: dan (CQRS란?)
+
+출처 https://velog.io/@cksdnr066/TIL-JPA-%EB%B2%8C%ED%81%AC-%EC%97%B0%EC%82%B0-%EC%82%AC%EC%9A%A9%EC%8B%9C-%EC%A3%BC%EC%9D%98%EC%A0%90
 
 ## Spring Data JPA
 - JPA를 더 쉽게 사용하게 해줌
@@ -94,8 +126,10 @@
 ## ORM vs SQL Mapper
 
 - 근데 아직까진 잘모르곘다. 난 마이바티스 써보니까 좋던데?
-- JPA에서 동적쿼리를 어떻게 사용하는진 모르겠지만 마이바티스에서는 엄청 직관적임
+- JPA에서 동적쿼리를 어떻게 사용하는진 모르겠지만 마이바티스에서는 
+    직관적임
     - 그냥 쿼리 작성하고 안에 if-else 문 쓰면 되니까
+      - [그렇게 쿼리에 `로직`이 쌓이게 된다.](https://github.com/java-squid/2022-jubilant/pull/20/files#r845704905)
     - Spring Data JPA에서 사용하려면 JPQL을 사용하던가 QueryDSL을 사용해야한다
     - > **QueryDSL?**    
     [자바코드로 쿼리 작성하게 해줌](https://doing7.tistory.com/123#:~:text=%F0%9F%8C%B1-,JPQL%20vs%20Querydsl%20%EB%B9%84%EA%B5%90,-%EC%BF%BC%EB%A6%AC%EB%A5%BC%20%EC%9E%90%EB%B0%94%EC%BD%94%EB%93%9C%EB%A1%9C%20%EC%9E%91%EC%84%B1%ED%95%9C) - 동적쿼리와 복잡한 쿼리 작성을 도와줌   
@@ -106,6 +140,7 @@
     이건 또 따지고보면 php 문법이라기 보다 코드이그나이터에서 따로만든 거니까 비교대상이 아니려나?   
     QueryDSL은 일단 간단한 예제로만 봤을땐 엄청 직관적이다.   
 - Spring Data JPA를 많이 사용하는 이유가 뭘까? 분명히 마이바티스가 어떤 한계가 있어서일텐데..!
+    - 한계라기보다 변경에 잘 대응할 수 있다: https://github.com/java-squid/2022-jubilant/pull/20/files#r845705511
 
     
 
