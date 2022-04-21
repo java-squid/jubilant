@@ -13,7 +13,7 @@
 ## JPQL
 - JPA 엔티티에 대한 쿼리작성 문법 - SQL이랑 비슷
 - 예를 들어 select * from member 이런거도 select * from Member 같이 from 절에 객체가 들어간다
-- 엄청 신기하다 [select new memberDTO 이런것도 있다]
+- 엄청 신기하다 [select new memberDTO 이런것도 있다](https://doing7.tistory.com/133#:~:text=%EC%A0%84%EC%B2%B4%20%ED%81%B4%EB%9E%98%EC%8A%A4%EB%AA%85%20%EC%9E%85%EB%A0%A5-,select%20new%20%ED%8C%A8%ED%82%A4%EC%A7%80%EB%AA%85.memberDTO(m.username%2C%20m.age)%20from%20Member%20as%20m,-%F0%9F%8C%B1%C2%A0%EC%97%94%ED%8B%B0%ED%8B%B0%20%ED%95%84%EB%93%9C%EC%9D%98%20%EB%91%90%EA%B0%80%EC%A7%80)
 
 ## JPA 영속성 컨텍스트란?
 - 디비와 어플리케이션 사이에 객체를 관리하는 논리적 공간 (컨텍스트)
