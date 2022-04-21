@@ -74,7 +74,7 @@
     - 이거 이해못함
     - 원문: [Notice the additional SELECT statements that are executed **because the post association has to be fetched prior to returning the List of PostComment entities.**](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping/39696775#:~:text=WHERE%20p.id%20%3D%204-,Notice%20the%20additional%20SELECT%20statements%20that%20are%20executed%20because%20the%20post%20association%20has%20to%20be%20fetched%20prior%20to%20returning%20the%20List%20of%20PostComment%20entities.,-Unlike%20the%20default)
 - post association이 필요없다면 lazy로 변경해줘야한다 
-- post association이 필여하다면 join fetch를 사용해야한다
+- post association이 필요하다면 join fetch를 사용해야한다
 - 근데 lazy로 명시해줘도 n +1 문제가 발생한다
     - 문제 원인과 해결법 제대로 파악못함
 
